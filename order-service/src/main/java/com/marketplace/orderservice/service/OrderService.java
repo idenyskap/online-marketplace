@@ -85,7 +85,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersByBuyer(Long buyerId) {
-        return orderRepository.findByBuyerIdAndStatus(buyerId, null)
+        return orderRepository.findByBuyerIdOrderByCreatedAtDesc(buyerId)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
