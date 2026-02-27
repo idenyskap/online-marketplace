@@ -2,6 +2,7 @@ package com.marketplace.userservice.service;
 
 import com.marketplace.userservice.dto.UserDTO;
 import com.marketplace.userservice.entity.User;
+import com.marketplace.userservice.exception.ResourceNotFoundException;
 import com.marketplace.userservice.mapper.UserMapper;
 import com.marketplace.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class UserService {
 
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         return userMapper.toDTO(user);
     }
 

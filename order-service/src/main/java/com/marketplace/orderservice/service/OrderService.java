@@ -6,6 +6,7 @@ import com.marketplace.orderservice.entity.Order;
 import com.marketplace.orderservice.entity.OrderItem;
 import com.marketplace.orderservice.enums.OrderStatus;
 import com.marketplace.orderservice.event.OrderEvent;
+import com.marketplace.orderservice.exception.ResourceNotFoundException;
 import com.marketplace.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,7 +65,7 @@ public class OrderService {
     @Transactional
     public OrderResponse updateStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
         log.info("Updating order {} status: {} → {}", orderId, order.getStatus(), newStatus);
 
@@ -79,7 +80,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
         return mapToResponse(order);
     }
 

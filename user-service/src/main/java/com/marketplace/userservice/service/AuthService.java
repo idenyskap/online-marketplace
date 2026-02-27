@@ -5,12 +5,13 @@ import com.marketplace.userservice.dto.LoginRequest;
 import com.marketplace.userservice.dto.RegisterRequest;
 import com.marketplace.userservice.entity.User;
 import com.marketplace.userservice.enums.Role;
+import com.marketplace.userservice.exception.EmailAlreadyExistsException;
+import com.marketplace.userservice.exception.ResourceNotFoundException;
 import com.marketplace.userservice.repository.UserRepository;
 import com.marketplace.userservice.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class AuthService {
         log.info("Registering new user: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists: " + request.getEmail());
+            throw new EmailAlreadyExistsException("Email already exists: " + request.getEmail());
         }
 
         User user = User.builder()
@@ -50,20 +51,15 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         log.info("Login attempt for: {}", request.getEmail());
 
-        try {
-            authManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getEmail(),
-                            request.getPassword()
-                    )
-            );
-        } catch (BadCredentialsException e) {
-            log.warn("Failed login attempt for: {}", request.getEmail());
-            throw new RuntimeException("Invalid email or password");
-        }
+        authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
+        );
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String token = jwtService.generateToken(user);
         log.info("User logged in successfully: {}", user.getEmail());

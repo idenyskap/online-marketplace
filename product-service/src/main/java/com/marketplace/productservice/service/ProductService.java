@@ -4,6 +4,7 @@ import com.marketplace.productservice.dto.ProductRequest;
 import com.marketplace.productservice.dto.ProductResponse;
 import com.marketplace.productservice.entity.Product;
 import com.marketplace.productservice.enums.Category;
+import com.marketplace.productservice.exception.ResourceNotFoundException;
 import com.marketplace.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +42,7 @@ public class ProductService {
 
     public ProductResponse getProductById(String id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         return mapToResponse(product);
     }
 
