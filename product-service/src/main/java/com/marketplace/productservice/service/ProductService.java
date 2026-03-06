@@ -8,6 +8,8 @@ import com.marketplace.productservice.exception.ResourceNotFoundException;
 import com.marketplace.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +22,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
+    @CacheEvict(value = "products", allEntries = true)
     public ProductResponse createProduct(ProductRequest request, Long sellerId) {
         log.info("Creating product: {} by seller: {}", request.getName(), sellerId);
 
@@ -40,12 +43,14 @@ public class ProductService {
         return mapToResponse(saved);
     }
 
+    @Cacheable(value = "products", key = "#id")
     public ProductResponse getProductById(String id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         return mapToResponse(product);
     }
 
+    @Cacheable(value = "products", key = "'allActive'")
     public List<ProductResponse> getAllActiveProducts() {
         return productRepository.findByActiveTrue()
                 .stream()
@@ -53,6 +58,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "products", key = "#category")
     public List<ProductResponse> getProductsByCategory(Category category) {
         return productRepository.findByCategory(category)
                 .stream()

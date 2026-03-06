@@ -4,7 +4,17 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/marketplace_products
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/marketplace_products}
+
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+      timeout: 2000ms
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000
 
 server:
   port: 8082
