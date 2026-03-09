@@ -1,5 +1,6 @@
 package com.marketplace.orderservice.service;
 
+import com.marketplace.orderservice.client.ProductClient;
 import com.marketplace.orderservice.config.KafkaConfig;
 import com.marketplace.orderservice.dto.*;
 import com.marketplace.orderservice.entity.Order;
@@ -25,6 +26,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final KafkaTemplate<String, OrderEvent> kafkaTemplate;
+    private final ProductClient productClient;
 
     @Transactional
     public OrderResponse createOrder(OrderRequest request, Long buyerId) {
@@ -39,16 +41,22 @@ public class OrderService {
         BigDecimal total = BigDecimal.ZERO;
 
         for (OrderItemRequest itemRequest : request.getItems()) {
-            OrderItem item = OrderItem.builder()
-                    .productId(itemRequest.getProductId())
-                    .productName(itemRequest.getProductName())
+            ProductResponse product = productClient.getProduct(itemRequest.getProductId());
+
+            if (product.getStock() < itemRequest.getQuantity()) {
+                throw new RuntimeException("Not enough stock for product: " + product.getName());
+            }
+
+            OrderItem orderItem = OrderItem.builder()
+                    .productId(product.getId())
+                    .productName(product.getName())
                     .quantity(itemRequest.getQuantity())
-                    .price(itemRequest.getPrice())
+                    .price(product.getPrice())
                     .build();
 
-            order.addItem(item);
+            order.addItem(orderItem);
 
-            total = total.add(itemRequest.getPrice()
+            total = total.add(orderItem.getPrice()
                     .multiply(BigDecimal.valueOf(itemRequest.getQuantity())));
         }
 
