@@ -1,8 +1,10 @@
 package com.marketplace.orderservice.service;
 
+import com.marketplace.orderservice.client.ProductClient;
 import com.marketplace.orderservice.dto.OrderItemRequest;
 import com.marketplace.orderservice.dto.OrderRequest;
 import com.marketplace.orderservice.dto.OrderResponse;
+import com.marketplace.orderservice.dto.ProductResponse;
 import com.marketplace.orderservice.entity.Order;
 import com.marketplace.orderservice.entity.OrderItem;
 import com.marketplace.orderservice.enums.OrderStatus;
@@ -35,21 +37,32 @@ class OrderServiceTest {
     @Mock
     private KafkaTemplate<String, OrderEvent> kafkaTemplate;
 
+    @Mock
+    private ProductClient productClient;
+
     @InjectMocks
     private OrderService orderService;
 
     @Test
     void shouldCreateOrder() {
+
         OrderItemRequest itemRequest = OrderItemRequest.builder()
                 .productId("prod1")
-                .productName("iPhone 15")
                 .quantity(2)
-                .price(BigDecimal.valueOf(999.99))
                 .build();
 
         OrderRequest request = OrderRequest.builder()
                 .items(List.of(itemRequest))
                 .build();
+
+        ProductResponse productResponse = ProductResponse.builder()
+                .id("prod1")
+                .name("iPhone 15")
+                .price(BigDecimal.valueOf(999.99))
+                .stock(10)
+                .build();
+
+        when(productClient.getProduct("prod1")).thenReturn(productResponse);
 
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
             Order order = invocation.getArgument(0);
@@ -66,11 +79,39 @@ class OrderServiceTest {
         assertEquals(1, result.getItems().size());
         assertEquals("iPhone 15", result.getItems().get(0).getProductName());
 
+        verify(productClient).getProduct("prod1");
+        verify(productClient).reduceStock("prod1", 2);
         verify(kafkaTemplate).send(any(), any(), any(OrderEvent.class));
     }
 
     @Test
+    void shouldThrowExceptionWhenNotEnoughStock() {
+
+        OrderItemRequest itemRequest = OrderItemRequest.builder()
+                .productId("prod1")
+                .quantity(20)
+                .build();
+
+        OrderRequest request = OrderRequest.builder()
+                .items(List.of(itemRequest))
+                .build();
+
+        ProductResponse productResponse = ProductResponse.builder()
+                .id("prod1")
+                .name("iPhone 15")
+                .price(BigDecimal.valueOf(999.99))
+                .stock(5)
+                .build();
+
+        when(productClient.getProduct("prod1")).thenReturn(productResponse);
+
+        assertThrows(RuntimeException.class, () ->
+                orderService.createOrder(request, 1L));
+    }
+
+    @Test
     void shouldGetOrderById() {
+
         Order order = Order.builder()
                 .id(1L)
                 .buyerId(1L)
@@ -101,6 +142,7 @@ class OrderServiceTest {
 
     @Test
     void shouldThrowExceptionWhenOrderNotFound() {
+
         when(orderRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () ->
@@ -109,6 +151,7 @@ class OrderServiceTest {
 
     @Test
     void shouldUpdateOrderStatus() {
+
         Order order = Order.builder()
                 .id(1L)
                 .buyerId(1L)
