@@ -25,7 +25,9 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+
     private final KafkaTemplate<String, OrderEvent> kafkaTemplate;
+
     private final ProductClient productClient;
 
     @Transactional
@@ -64,6 +66,10 @@ public class OrderService {
 
         Order saved = orderRepository.save(order);
         log.info("Order created with id: {}", saved.getId());
+
+        for (OrderItem item : saved.getItems()) {
+            productClient.reduceStock(item.getProductId(), item.getQuantity());
+        }
 
         sendOrderEvent(saved, "ORDER_CREATED");
 

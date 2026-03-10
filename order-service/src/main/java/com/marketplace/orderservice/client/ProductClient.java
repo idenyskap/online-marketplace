@@ -31,6 +31,17 @@ public class ProductClient {
         return product;
     }
 
+    @CircuitBreaker(name = "productService", fallbackMethod = "reduceStockFallback")
+    public void reduceStock(String productId, int quantity) {
+        String url = productServerUrl + "/api/v1/products/" + productId + "/stock?quantity=" + quantity;
+        restTemplate.put(url, null);
+        log.info("Stock reduced for product {}: quantity={}", productId, quantity);
+    }
+
+    private void reduceStockFallback(String productId, int quantity, Throwable throwable) {
+        log.error("Failed to reduce stock for product {}. Error: {}", productId, throwable.getMessage());
+    }
+
     private ProductResponse getProductFallback(String productId, Throwable throwable) {
 
         log.error("Product Service is unavailable. ProductId: {}, Error: {}", productId, throwable.getMessage());

@@ -6,6 +6,9 @@ import com.marketplace.productservice.enums.Category;
 import com.marketplace.productservice.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,9 +40,28 @@ public class ProductController {
         return ResponseEntity.ok(productResponse);
     }
 
+    @GetMapping("/page")
+    public ResponseEntity<Page<ProductResponse>> getAllActiveProductsPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sort) {
+
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, sort));
+        Page<ProductResponse> products = productService.getAllActiveProductsPaginated(pageRequest);
+        return ResponseEntity.ok(products);
+    }
+
     @GetMapping("/category/{category}")
     public ResponseEntity<List<ProductResponse>> getProductsByCategory(@PathVariable Category category) {
         List<ProductResponse> productResponse = productService.getProductsByCategory(category);
+        return ResponseEntity.ok(productResponse);
+    }
+
+    @PutMapping("/{id}/stock")
+    public ResponseEntity<ProductResponse> reduceStock(
+            @PathVariable String id,
+            @RequestParam int quantity) {
+        ProductResponse productResponse = productService.reduceStock(id, quantity);
         return ResponseEntity.ok(productResponse);
     }
 

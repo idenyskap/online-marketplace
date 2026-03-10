@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -66,6 +68,11 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    public Page<ProductResponse> getAllActiveProductsPaginated(Pageable pageable) {
+        return productRepository.findByActiveTrue(pageable)
+                .map(this::mapToResponse);
+    }
+
     public List<ProductResponse> searchProducts(String keyword) {
         return productRepository.findByNameContainingIgnoreCase(keyword)
                 .stream()
@@ -78,6 +85,25 @@ public class ProductService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @CacheEvict(value = "products", allEntries = true)
+    public ProductResponse reduceStock(String productId, int quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
+
+        if (product.getStock() < quantity) {
+            throw new RuntimeException("Not enough stock for product: " + product.getName()
+                    + ". Available: " + product.getStock() + ", requested: " + quantity);
+        }
+
+        product.setStock(product.getStock() - quantity);
+        Product updated = productRepository.save(product);
+
+        log.info("Stock reduced for product {}: {} → {}", productId,
+                product.getStock() + quantity, updated.getStock());
+
+        return mapToResponse(updated);
     }
 
     private ProductResponse mapToResponse(Product product) {
