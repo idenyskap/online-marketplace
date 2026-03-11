@@ -2,9 +2,10 @@ spring:
   application:
     name: notification-service
 
-  kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
+  kafka:
     consumer:
       group-id: notification-service
       auto-offset-reset: earliest
@@ -16,12 +17,3 @@ spring:
 
 server:
   port: 8084
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health, info, metrics
-  endpoint:
-    health:
-      show-details: always

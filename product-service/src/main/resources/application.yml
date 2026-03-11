@@ -2,14 +2,8 @@ spring:
   application:
     name: product-service
 
-  data:
-    mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/marketplace_products}
-
-    redis:
-      host: ${SPRING_REDIS_HOST:localhost}
-      port: ${SPRING_REDIS_PORT:6379}
-      timeout: 2000ms
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
   cache:
     type: redis
@@ -18,12 +12,3 @@ spring:
 
 server:
   port: 8082
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health, info, metrics
-  endpoint:
-    health:
-      show-details: always
