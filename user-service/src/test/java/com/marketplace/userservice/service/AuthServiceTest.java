@@ -53,9 +53,12 @@ class AuthServiceTest {
 
         when(userRepository.existsByEmail("test@gmail.com")).thenReturn(false);
         when(passwordEncoder.encode("password123")).thenReturn("hashedPassword");
-        when(userRepository.save(any(User.class))).thenAnswer(
-                invocation -> invocation.getArgument(0));
-        when(jwtService.generateToken(any(User.class))).thenReturn("jwt-token-123");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User savedUser = invocation.getArgument(0);
+            savedUser.setId(1L);
+            return savedUser;
+        });
+        when(jwtService.generateToken(any(java.util.Map.class), any(User.class))).thenReturn("jwt-token-123");
 
         AuthResponse result = authService.register(request);
 
@@ -93,7 +96,7 @@ class AuthServiceTest {
                 .build();
 
         when(userRepository.findByEmail("test@gmail.com")).thenReturn(Optional.of(user));
-        when(jwtService.generateToken(user)).thenReturn("jwt-token-123");
+        when(jwtService.generateToken(any(java.util.Map.class), any(User.class))).thenReturn("jwt-token-123");
 
         AuthResponse result = authService.login(request);
 
