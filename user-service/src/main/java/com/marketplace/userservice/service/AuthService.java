@@ -16,6 +16,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -44,7 +46,7 @@ public class AuthService {
         userRepository.save(user);
         log.info("User registered successfully: {}", user.getEmail());
 
-        String token = jwtService.generateToken(user);
+        String token = generateTokenWithUserId(user);
         return buildAuthResponse(user, token);
     }
 
@@ -61,9 +63,17 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String token = jwtService.generateToken(user);
+        String token = generateTokenWithUserId(user);
         log.info("User logged in successfully: {}", user.getEmail());
         return buildAuthResponse(user, token);
+    }
+
+    private String generateTokenWithUserId(User user) {
+        Map<String, Object> extraClaims = Map.of(
+                "userId", user.getId(),
+                "role", user.getRole().name()
+        );
+        return jwtService.generateToken(extraClaims, user);
     }
 
     private AuthResponse buildAuthResponse(User user, String token) {

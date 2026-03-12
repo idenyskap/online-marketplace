@@ -8,7 +8,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -18,21 +21,37 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderRequest request) {
-        OrderResponse orderResponse = orderService.createOrder(request, 1L);
+    public ResponseEntity<OrderResponse> createOrder(
+            @Valid @RequestBody OrderRequest request,
+            Authentication authentication) {
+
+        Long buyerId = (Long) authentication.getPrincipal();
+        OrderResponse orderResponse = orderService.createOrder(request, buyerId);
         return ResponseEntity.status(HttpStatus.CREATED).body(orderResponse);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
-        OrderResponse orderResponse = orderService.getOrderById(id);
+    public ResponseEntity<OrderResponse> getOrderById(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        Long buyerId = (Long) authentication.getPrincipal();
+        OrderResponse orderResponse = orderService.getOrderById(id, buyerId);
         return ResponseEntity.ok(orderResponse);
     }
 
+    @GetMapping
+    public ResponseEntity<List<OrderResponse>> getMyOrders(Authentication authentication) {
+        Long buyerId = (Long) authentication.getPrincipal();
+        List<OrderResponse> orders = orderService.getOrdersByBuyer(buyerId);
+        return ResponseEntity.ok(orders);
+    }
+
     @PatchMapping("/{id}/status")
-    public ResponseEntity<OrderResponse> updateStatus(@PathVariable Long id,
-                                                      @RequestParam OrderStatus status) {
-        OrderResponse orderResponse = orderService.updateStatus(id,status);
+    public ResponseEntity<OrderResponse> updateStatus(
+            @PathVariable Long id,
+            @RequestParam OrderStatus status) {
+        OrderResponse orderResponse = orderService.updateStatus(id, status);
         return ResponseEntity.ok(orderResponse);
     }
 }

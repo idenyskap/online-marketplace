@@ -92,9 +92,14 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public OrderResponse getOrderById(Long id) {
+    public OrderResponse getOrderById(Long id, Long buyerId) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
+
+        if (!order.getBuyerId().equals(buyerId)) {
+            throw new ResourceNotFoundException("Order not found: " + id);
+        }
+
         return mapToResponse(order);
     }
 
