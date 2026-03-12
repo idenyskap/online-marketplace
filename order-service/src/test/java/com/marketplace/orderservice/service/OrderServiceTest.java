@@ -130,7 +130,7 @@ class OrderServiceTest {
 
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
 
-        OrderResponse result = orderService.getOrderById(1L);
+        OrderResponse result = orderService.getOrderById(1L, 1L);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -146,7 +146,7 @@ class OrderServiceTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () ->
-                orderService.getOrderById(1L));
+                orderService.getOrderById(1L, 1L));
     }
 
     @Test
