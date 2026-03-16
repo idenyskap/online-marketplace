@@ -8,7 +8,6 @@ import com.marketplace.orderservice.dto.ProductResponse;
 import com.marketplace.orderservice.entity.Order;
 import com.marketplace.orderservice.entity.OrderItem;
 import com.marketplace.orderservice.enums.OrderStatus;
-import com.marketplace.orderservice.event.OrderEvent;
 import com.marketplace.orderservice.exception.ResourceNotFoundException;
 import com.marketplace.orderservice.repository.OrderRepository;
 import org.junit.jupiter.api.Test;
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -35,10 +33,10 @@ class OrderServiceTest {
     private OrderRepository orderRepository;
 
     @Mock
-    private KafkaTemplate<String, OrderEvent> kafkaTemplate;
+    private ProductClient productClient;
 
     @Mock
-    private ProductClient productClient;
+    private OrderPostProcessor orderPostProcessor;
 
     @InjectMocks
     private OrderService orderService;
@@ -80,8 +78,7 @@ class OrderServiceTest {
         assertEquals("iPhone 15", result.getItems().get(0).getProductName());
 
         verify(productClient).getProduct("prod1");
-        verify(productClient).reduceStock("prod1", 2);
-        verify(kafkaTemplate).send(any(), any(), any(OrderEvent.class));
+        verify(orderPostProcessor).processOrder(any(Order.class), any(String.class));
     }
 
     @Test
@@ -169,6 +166,6 @@ class OrderServiceTest {
         assertNotNull(result);
         assertEquals(OrderStatus.PAID, result.getStatus());
 
-        verify(kafkaTemplate).send(any(), any(), any(OrderEvent.class));
+        verify(orderPostProcessor).processStatusChange(any(Order.class), any(String.class));
     }
 }

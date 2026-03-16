@@ -1,17 +1,14 @@
 package com.marketplace.orderservice.service;
 
 import com.marketplace.orderservice.client.ProductClient;
-import com.marketplace.orderservice.config.KafkaConfig;
 import com.marketplace.orderservice.dto.*;
 import com.marketplace.orderservice.entity.Order;
 import com.marketplace.orderservice.entity.OrderItem;
 import com.marketplace.orderservice.enums.OrderStatus;
-import com.marketplace.orderservice.event.OrderEvent;
 import com.marketplace.orderservice.exception.ResourceNotFoundException;
 import com.marketplace.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,9 +23,8 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
 
-    private final KafkaTemplate<String, OrderEvent> kafkaTemplate;
-
     private final ProductClient productClient;
+    private final OrderPostProcessor orderPostProcessor;
 
     @Transactional
     public OrderResponse createOrder(OrderRequest request, Long buyerId) {
@@ -67,11 +63,7 @@ public class OrderService {
         Order saved = orderRepository.save(order);
         log.info("Order created with id: {}", saved.getId());
 
-        for (OrderItem item : saved.getItems()) {
-            productClient.reduceStock(item.getProductId(), item.getQuantity());
-        }
-
-        sendOrderEvent(saved, "ORDER_CREATED");
+        orderPostProcessor.processOrder(saved, "ORDER_CREATED");
 
         return mapToResponse(saved);
     }
@@ -86,7 +78,7 @@ public class OrderService {
         order.setStatus(newStatus);
         Order updated = orderRepository.save(order);
 
-        sendOrderEvent(updated, "ORDER_STATUS_CHANGED");
+        orderPostProcessor.processStatusChange(updated, "ORDER_STATUS_CHANGED");
 
         return mapToResponse(updated);
     }
@@ -109,20 +101,6 @@ public class OrderService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-    }
-
-    private void sendOrderEvent(Order order, String eventType) {
-        OrderEvent event = OrderEvent.builder()
-                .orderId(order.getId())
-                .buyerId(order.getBuyerId())
-                .status(order.getStatus().name())
-                .totalAmount(order.getTotalAmount())
-                .itemCount(order.getItems().size())
-                .eventType(eventType)
-                .build();
-
-        log.info("Sending Kafka event: {} for order: {}", eventType, order.getId());
-        kafkaTemplate.send(KafkaConfig.ORDER_TOPIC, order.getId().toString(), event);
     }
 
     private OrderResponse mapToResponse(Order order) {
