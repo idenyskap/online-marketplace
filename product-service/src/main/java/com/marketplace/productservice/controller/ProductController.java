@@ -3,6 +3,7 @@ package com.marketplace.productservice.controller;
 import com.marketplace.productservice.dto.ProductRequest;
 import com.marketplace.productservice.dto.ProductResponse;
 import com.marketplace.productservice.enums.Category;
+import com.marketplace.productservice.service.FileStorageService;
 import com.marketplace.productservice.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -21,6 +23,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final FileStorageService fileStorageService;
 
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductRequest request) {
@@ -69,6 +72,16 @@ public class ProductController {
     public ResponseEntity<List<ProductResponse>> searchProducts(@RequestParam String keyword) {
         List<ProductResponse> productResponse = productService.searchProducts(keyword);
         return ResponseEntity.ok(productResponse);
+    }
+
+    @PostMapping("/{id}/image")
+    public ResponseEntity<ProductResponse> uploadProductImage(
+            @PathVariable String id,
+            @RequestParam("file") MultipartFile file) {
+
+        String imageUrl = fileStorageService.uploadFile(file);
+        ProductResponse response = productService.updateImageUrl(id, imageUrl);
+        return ResponseEntity.ok(response);
     }
 
 }

@@ -12,3 +12,13 @@ spring:
 
 server:
   port: 8082
+
+minio:
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:product-images}
+
+spring.servlet.multipart:
+  max-file-size: 5MB
+  max-request-size: 5MB

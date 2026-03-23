@@ -106,6 +106,18 @@ public class ProductService {
         return mapToResponse(updated);
     }
 
+    @CacheEvict(value = "products", allEntries = true)
+    public ProductResponse updateImageUrl(String productId, String imageUrl) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
+
+        product.setImageUrl(imageUrl);
+        Product updated = productRepository.save(product);
+
+        log.info("Image URL updated for product {}: {}", productId, imageUrl);
+        return mapToResponse(updated);
+    }
+
     private ProductResponse mapToResponse(Product product) {
         return ProductResponse.builder()
                 .id(product.getId())
