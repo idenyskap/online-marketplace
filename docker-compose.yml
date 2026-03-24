@@ -58,6 +58,14 @@ services:
     command: server /data --console-address ":9001"
     restart: unless-stopped
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: marketplace-mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    restart: unless-stopped
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: marketplace-zookeeper
@@ -144,8 +152,12 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM: marketplace@example.com
     depends_on:
       - kafka
+      - mailpit
     restart: unless-stopped
 
   api-gateway:

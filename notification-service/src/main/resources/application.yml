@@ -15,5 +15,19 @@ spring:
         spring.json.trusted.packages: "*"
         spring.json.type.mapping: "com.marketplace.orderservice.event.OrderEvent:com.marketplace.notificationservice.event.OrderEvent"
 
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
 server:
   port: 8084
+
+notification:
+  mail:
+    from: ${MAIL_FROM:marketplace@example.com}
