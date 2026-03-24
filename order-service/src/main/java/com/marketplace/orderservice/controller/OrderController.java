@@ -3,6 +3,7 @@ package com.marketplace.orderservice.controller;
 import com.marketplace.orderservice.dto.OrderRequest;
 import com.marketplace.orderservice.dto.OrderResponse;
 import com.marketplace.orderservice.enums.OrderStatus;
+import com.marketplace.orderservice.service.IdempotencyService;
 import com.marketplace.orderservice.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,14 +20,28 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final IdempotencyService idempotencyService;
 
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
             @Valid @RequestBody OrderRequest request,
-            Authentication authentication) {
+            Authentication authentication,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+
+        if (idempotencyKey != null) {
+            OrderResponse cached = idempotencyService.getExistingResponse(idempotencyKey);
+            if (cached != null) {
+                return ResponseEntity.ok(cached);
+            }
+        }
 
         Long buyerId = (Long) authentication.getPrincipal();
         OrderResponse orderResponse = orderService.createOrder(request, buyerId);
+
+        if (idempotencyKey != null) {
+            idempotencyService.saveResponse(idempotencyKey, orderResponse);
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderResponse);
     }
 
