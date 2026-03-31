@@ -87,10 +87,10 @@ docker-compose up -d
 
 ## Roadmap
 
-- [ ] Email notifications in Notification Service
+- [x] Email notifications in Notification Service
 - [x] Integration tests with Testcontainers
 - [x] Monitoring with Grafana + Prometheus
 - [x] S3-compatible file storage (MinIO) for product images
 - [x] Idempotency keys for order creation
-- [ ] Saga Pattern for distributed transactions
+- [x] Saga Pattern for distributed transactions
 - [ ] Distributed tracing with Micrometer

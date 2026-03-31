@@ -1,5 +1,6 @@
-package com.marketplace.notificationservice.event;
+package com.marketplace.productservice.event;
 
+import com.marketplace.productservice.event.OrderItemEvent;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

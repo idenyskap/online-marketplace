@@ -117,10 +117,12 @@ services:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: product-images
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
       - products-db
       - redis
       - minio
+      - kafka
     restart: unless-stopped
 
   order-service:

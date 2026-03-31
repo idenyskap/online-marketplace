@@ -4,6 +4,7 @@ import com.marketplace.productservice.dto.ProductRequest;
 import com.marketplace.productservice.dto.ProductResponse;
 import com.marketplace.productservice.entity.Product;
 import com.marketplace.productservice.enums.Category;
+import com.marketplace.productservice.exception.InsufficientStockException;
 import com.marketplace.productservice.exception.ResourceNotFoundException;
 import com.marketplace.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -93,7 +94,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
 
         if (product.getStock() < quantity) {
-            throw new RuntimeException("Not enough stock for product: " + product.getName()
+            throw new InsufficientStockException("Not enough stock for product: " + product.getName()
                     + ". Available: " + product.getStock() + ", requested: " + quantity);
         }
 
@@ -102,6 +103,20 @@ public class ProductService {
 
         log.info("Stock reduced for product {}: {} → {}", productId,
                 product.getStock() + quantity, updated.getStock());
+
+        return mapToResponse(updated);
+    }
+
+    @CacheEvict(value = "products", allEntries = true)
+    public ProductResponse restoreStock(String productId, int quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
+
+        product.setStock(product.getStock() + quantity);
+        Product updated = productRepository.save(product);
+
+        log.info("Stock restored for product {}: {} → {}", productId,
+                product.getStock() - quantity, updated.getStock());
 
         return mapToResponse(updated);
     }

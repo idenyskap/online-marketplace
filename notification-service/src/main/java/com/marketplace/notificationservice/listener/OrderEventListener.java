@@ -37,6 +37,11 @@ public class OrderEventListener {
                 emailService.sendStatusUpdate(event);
             }
 
+            case "ORDER_FAILED" -> {
+                log.info("ORDER FAILED! orderId={}", event.getOrderId());
+                emailService.sendStatusUpdate(event);
+            }
+
             default -> log.warn("Unknown event type: {}", event.getEventType());
         }
     }

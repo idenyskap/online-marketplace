@@ -68,6 +68,14 @@ public class ProductController {
         return ResponseEntity.ok(productResponse);
     }
 
+    @PutMapping("/{id}/stock/restore")
+    public ResponseEntity<ProductResponse> restoreStock(
+            @PathVariable String id,
+            @RequestParam int quantity) {
+        ProductResponse productResponse = productService.restoreStock(id, quantity);
+        return ResponseEntity.ok(productResponse);
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<ProductResponse>> searchProducts(@RequestParam String keyword) {
         List<ProductResponse> productResponse = productService.searchProducts(keyword);
