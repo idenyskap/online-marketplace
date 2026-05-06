@@ -11,7 +11,7 @@ spring:
         format_sql: true
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: localhost:29092
 
 product-service:
   url: http://localhost:8082
@@ -28,3 +28,9 @@ management:
   endpoint:
     health:
       show-details: always
+
+stripe:
+  api-key: ${STRIPE_API_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  success-url: http://localhost:8080/payment/success
+  cancel-url: http://localhost:8080/payment/cancel

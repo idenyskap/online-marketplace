@@ -1,10 +1,12 @@
 package com.marketplace.orderservice.controller;
 
+import com.marketplace.orderservice.dto.CheckoutResponse;
 import com.marketplace.orderservice.dto.OrderRequest;
 import com.marketplace.orderservice.dto.OrderResponse;
 import com.marketplace.orderservice.enums.OrderStatus;
 import com.marketplace.orderservice.service.IdempotencyService;
 import com.marketplace.orderservice.service.OrderService;
+import com.stripe.exception.StripeException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,34 +17,34 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
+@RequestMapping("/api/v1/orders")
 public class OrderController {
 
     private final OrderService orderService;
     private final IdempotencyService idempotencyService;
 
     @PostMapping
-    public ResponseEntity<OrderResponse> createOrder(
+    public ResponseEntity<CheckoutResponse> createOrder(
             @Valid @RequestBody OrderRequest request,
             Authentication authentication,
-            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) throws StripeException {
 
         if (idempotencyKey != null) {
-            OrderResponse cached = idempotencyService.getExistingResponse(idempotencyKey);
+            CheckoutResponse cached = idempotencyService.getExistingResponse(idempotencyKey);
             if (cached != null) {
                 return ResponseEntity.ok(cached);
             }
         }
 
         Long buyerId = (Long) authentication.getPrincipal();
-        OrderResponse orderResponse = orderService.createOrder(request, buyerId);
+        CheckoutResponse checkoutResponse = orderService.createOrder(request, buyerId);
 
         if (idempotencyKey != null) {
-            idempotencyService.saveResponse(idempotencyKey, orderResponse);
+            idempotencyService.saveResponse(idempotencyKey, checkoutResponse);
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderResponse);
+        return ResponseEntity.status(HttpStatus.CREATED).body(checkoutResponse);
     }
 
     @GetMapping("/{id}")
@@ -70,3 +72,4 @@ public class OrderController {
         return ResponseEntity.ok(orderResponse);
     }
 }
+

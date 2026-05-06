@@ -1,6 +1,7 @@
 package com.marketplace.orderservice.service;
 
 import com.marketplace.orderservice.client.ProductClient;
+import com.marketplace.orderservice.dto.CheckoutResponse;
 import com.marketplace.orderservice.dto.OrderItemRequest;
 import com.marketplace.orderservice.dto.OrderRequest;
 import com.marketplace.orderservice.dto.OrderResponse;
@@ -10,6 +11,8 @@ import com.marketplace.orderservice.entity.OrderItem;
 import com.marketplace.orderservice.enums.OrderStatus;
 import com.marketplace.orderservice.exception.ResourceNotFoundException;
 import com.marketplace.orderservice.repository.OrderRepository;
+import com.stripe.exception.StripeException;
+import com.stripe.model.checkout.Session;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,6 +26,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,11 +42,14 @@ class OrderServiceTest {
     @Mock
     private OrderPostProcessor orderPostProcessor;
 
+    @Mock
+    private StripeService stripeService;
+
     @InjectMocks
     private OrderService orderService;
 
     @Test
-    void shouldCreateOrder() {
+    void shouldCreateOrder() throws StripeException {
 
         OrderItemRequest itemRequest = OrderItemRequest.builder()
                 .productId("prod1")
@@ -68,17 +75,22 @@ class OrderServiceTest {
             return order;
         });
 
-        OrderResponse result = orderService.createOrder(request, 1L);
+        Session stripeSession = mock(Session.class);
+        when(stripeSession.getId()).thenReturn("cs_test_123");
+        when(stripeSession.getUrl()).thenReturn("https://checkout.stripe.com/c/pay/cs_test_123");
+        when(stripeService.createCheckoutSession(any(Order.class))).thenReturn(stripeSession);
+
+        CheckoutResponse result = orderService.createOrder(request, 1L);
 
         assertNotNull(result);
-        assertEquals(1L, result.getBuyerId());
-        assertEquals(OrderStatus.CREATED, result.getStatus());
+        assertEquals(1L, result.getOrderId());
+        assertEquals(OrderStatus.PENDING_PAYMENT, result.getStatus());
         assertEquals(BigDecimal.valueOf(1999.98), result.getTotalAmount());
-        assertEquals(1, result.getItems().size());
-        assertEquals("iPhone 15", result.getItems().get(0).getProductName());
+        assertEquals("cs_test_123", result.getPaymentSessionId());
+        assertEquals("https://checkout.stripe.com/c/pay/cs_test_123", result.getCheckoutUrl());
 
         verify(productClient).getProduct("prod1");
-        verify(orderPostProcessor).processOrder(any(Order.class), any(String.class));
+        verify(stripeService).createCheckoutSession(any(Order.class));
     }
 
     @Test

@@ -19,3 +19,7 @@ Thumbs.db
 .mvn/
 mvnw
 mvnw.cmd
+
+.env
+
+.claude/

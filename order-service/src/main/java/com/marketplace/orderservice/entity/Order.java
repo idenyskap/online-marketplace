@@ -46,6 +46,12 @@ public class Order {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "payment_session_id")
+    private String paymentSessionId;
+
+    @Column(name = "payment_intent_id")
+    private String paymentIntentId;
+
     public void addItem(OrderItem item) {
         items.add(item);
         item.setOrder(this);
