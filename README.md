@@ -93,4 +93,4 @@ docker-compose up -d
 - [x] S3-compatible file storage (MinIO) for product images
 - [x] Idempotency keys for order creation
 - [x] Saga Pattern for distributed transactions
-- [ ] Distributed tracing with Micrometer
+- [x] Distributed tracing with Micrometer + Zipkin

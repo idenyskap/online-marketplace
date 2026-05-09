@@ -104,8 +104,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: 86400000
+      ZIPKIN_URL: http://zipkin:9411
     depends_on:
       - users-db
+      - zipkin
     restart: unless-stopped
 
   product-service:
@@ -123,11 +125,13 @@ services:
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: product-images
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      ZIPKIN_URL: http://zipkin:9411
     depends_on:
       - products-db
       - redis
       - minio
       - kafka
+      - zipkin
     restart: unless-stopped
 
   order-service:
@@ -145,10 +149,12 @@ services:
       SPRING_REDIS_PORT: 6379
       PRODUCT_SERVICE_URL: http://product-service:8082
       JWT_SECRET: ${JWT_SECRET}
+      ZIPKIN_URL: http://zipkin:9411
     depends_on:
       - orders-db
       - kafka
       - redis
+      - zipkin
     restart: unless-stopped
 
   notification-service:
@@ -162,9 +168,11 @@ services:
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
       MAIL_FROM: marketplace@example.com
+      ZIPKIN_URL: http://zipkin:9411
     depends_on:
       - kafka
       - mailpit
+      - zipkin
     restart: unless-stopped
 
   api-gateway:
@@ -180,11 +188,20 @@ services:
       ORDER_SERVICE_URL: http://order-service:8083
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      ZIPKIN_URL: http://zipkin:9411
     depends_on:
       - user-service
       - product-service
       - order-service
       - redis
+      - zipkin
+    restart: unless-stopped
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: marketplace-zipkin
+    ports:
+      - "9411:9411"
     restart: unless-stopped
 
   prometheus:
