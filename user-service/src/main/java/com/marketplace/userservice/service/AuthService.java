@@ -40,6 +40,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
+                .phone(request.getPhone())
                 .role(Role.BUYER)
                 .build();
 

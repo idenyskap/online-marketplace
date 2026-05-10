@@ -38,6 +38,9 @@ public class User implements UserDetails {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @Column(name = "phone")
+    private String phone;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -49,6 +52,12 @@ public class User implements UserDetails {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
+    @Column(name = "phone_verified", nullable = false)
+    private boolean phoneVerified;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
