@@ -5,6 +5,8 @@ import com.marketplace.userservice.dto.LoginRequest;
 import com.marketplace.userservice.dto.RegisterRequest;
 import com.marketplace.userservice.entity.User;
 import com.marketplace.userservice.enums.Role;
+import com.marketplace.userservice.event.UserEvent;
+import com.marketplace.userservice.event.UserEventType;
 import com.marketplace.userservice.exception.EmailAlreadyExistsException;
 import com.marketplace.userservice.exception.ResourceNotFoundException;
 import com.marketplace.userservice.repository.UserRepository;
@@ -16,7 +18,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -27,6 +31,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authManager;
+    private final UserEventPublisher userEventPublisher;
 
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering new user: {}", request.getEmail());
@@ -46,6 +51,14 @@ public class AuthService {
 
         userRepository.save(user);
         log.info("User registered successfully: {}", user.getEmail());
+
+        UserEvent userEvent = UserEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .userId(user.getId())
+                .type(UserEventType.USER_REGISTERED)
+                .occurredAt(Instant.now())
+                .build();
+        userEventPublisher.publish(userEvent);
 
         String token = generateTokenWithUserId(user);
         return buildAuthResponse(user, token);

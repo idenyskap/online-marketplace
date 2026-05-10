@@ -105,9 +105,11 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: 86400000
       ZIPKIN_URL: http://zipkin:9411
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
       - users-db
       - zipkin
+      - kafka
     restart: unless-stopped
 
   product-service:
