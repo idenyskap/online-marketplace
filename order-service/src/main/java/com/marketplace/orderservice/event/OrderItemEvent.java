@@ -11,4 +11,5 @@ public class OrderItemEvent {
 
     private String productId;
     private int quantity;
+    private Long sellerId;
 }

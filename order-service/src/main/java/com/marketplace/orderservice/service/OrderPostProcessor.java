@@ -73,7 +73,7 @@ public class OrderPostProcessor {
                     .itemCount(order.getItems().size())
                     .eventType(eventType)
                     .items(items.stream()
-                            .map(item -> new OrderItemEvent(item.getProductId(), item.getQuantity()))
+                            .map(item -> new OrderItemEvent(item.getProductId(), item.getQuantity(), item.getSellerId()))
                             .toList())
                     .build();
 

@@ -56,3 +56,9 @@ resilience4j:
         wait-duration-in-open-state: 30000
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: true
+
+stripe:
+  api-key: ${STRIPE_API_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  success-url: http://localhost:8080/payment/success
+  cancel-url: http://localhost:8080/payment/cancel
