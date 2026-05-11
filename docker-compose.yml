@@ -35,6 +35,19 @@ services:
       - orders-db-data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  messaging-db:
+    image: postgres:15
+    container_name: marketplace-messaging-db
+    environment:
+      POSTGRES_DB: marketplace_messaging
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - messaging-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     container_name: marketplace-redis
@@ -160,6 +173,28 @@ services:
       - product-service
     restart: unless-stopped
 
+  messaging-service:
+    build: ./messaging-service
+    container_name: marketplace-messaging-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://messaging-db:5432/marketplace_messaging
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      ZIPKIN_URL: http://zipkin:9411
+    depends_on:
+      - messaging-db
+      - kafka
+      - redis
+      - zipkin
+    restart: unless-stopped
+
   notification-service:
     build: ./notification-service
     container_name: marketplace-notification-service
@@ -192,12 +227,14 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       ZIPKIN_URL: http://zipkin:9411
+      MESSAGING_SERVICE_URL: http://messaging-service:8085
     depends_on:
       - user-service
       - product-service
       - order-service
       - redis
       - zipkin
+      - messaging-service
     restart: unless-stopped
 
   zipkin:
@@ -220,6 +257,7 @@ services:
       - product-service
       - order-service
       - notification-service
+      - messaging-service
       - api-gateway
     restart: unless-stopped
 
@@ -241,6 +279,7 @@ volumes:
   users-db-data:
   products-db-data:
   orders-db-data:
+  messaging-db-data:
   redis-data:
   minio-data:
   prometheus-data:

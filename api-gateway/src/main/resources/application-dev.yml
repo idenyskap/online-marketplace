@@ -40,6 +40,18 @@ spring:
                     redis-rate-limiter.requestedTokens: 1
                     key-resolver: "#{@ipKeyResolver}"
 
+            - id: messaging-service
+              uri: http://localhost:8085
+              predicates:
+                - Path=/api/v1/messages/**, /api/v1/conversations/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@ipKeyResolver}"
+
   data:
     redis:
       host: localhost
