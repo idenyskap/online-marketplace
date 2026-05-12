@@ -3,6 +3,7 @@ package com.marketplace.orderservice;
 import com.marketplace.orderservice.client.ProductClient;
 import com.marketplace.orderservice.dto.*;
 import com.marketplace.orderservice.enums.OrderStatus;
+import com.stripe.exception.StripeException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,11 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
+import com.marketplace.orderservice.service.StripeService;
+import com.stripe.model.checkout.Session;
+import org.junit.jupiter.api.BeforeEach;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -25,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -44,6 +49,9 @@ public class OrderIntegrationTest {
     @MockitoBean
     private ProductClient productClient;
 
+    @MockitoBean
+    private StripeService stripeService;
+
     @Value("${jwt.secret}")
     private String jwtSecret;
 
@@ -53,6 +61,14 @@ public class OrderIntegrationTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+    }
+
+    @BeforeEach
+    void setupStripeMock() throws StripeException {
+        Session fakeSession = mock(Session.class);
+        when(fakeSession.getId()).thenReturn("cs_test_fake");
+        when(fakeSession.getUrl()).thenReturn("https://checkout.stripe.com/fake");
+        when(stripeService.createCheckoutSession(any())).thenReturn(fakeSession);
     }
 
     private String generateTestToken(Long userId, String email, String role) {
@@ -94,16 +110,17 @@ public class OrderIntegrationTest {
 
         HttpEntity<OrderRequest> entity = new HttpEntity<>(request, authHeaders(1L, "buyer@test.com", "BUYER"));
 
-        ResponseEntity<OrderResponse> response = restTemplate.exchange(
-                "/api/v1/orders", HttpMethod.POST, entity, OrderResponse.class
+        ResponseEntity<CheckoutResponse> response = restTemplate.exchange(
+                "/api/v1/orders", HttpMethod.POST, entity, CheckoutResponse.class
         );
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(1L, response.getBody().getBuyerId());
-        assertEquals(OrderStatus.CREATED, response.getBody().getStatus());
-        assertEquals(1, response.getBody().getItems().size());
-        assertEquals("iPhone 15", response.getBody().getItems().get(0).getProductName());
+        assertNotNull(response.getBody().getOrderId());
+        assertEquals(OrderStatus.PENDING_PAYMENT, response.getBody().getStatus());
+        assertEquals(BigDecimal.valueOf(1999.98), response.getBody().getTotalAmount());
+        assertEquals("cs_test_fake", response.getBody().getPaymentSessionId());
+        assertEquals("https://checkout.stripe.com/fake", response.getBody().getCheckoutUrl());
     }
 
     @Test
@@ -128,7 +145,7 @@ public class OrderIntegrationTest {
 
         HttpHeaders headers = authHeaders(2L, "buyer2@test.com", "BUYER");
         HttpEntity<OrderRequest> createEntity = new HttpEntity<>(request, headers);
-        restTemplate.exchange("/api/v1/orders", HttpMethod.POST, createEntity, OrderResponse.class);
+        restTemplate.exchange("/api/v1/orders", HttpMethod.POST, createEntity, CheckoutResponse.class);
 
         HttpEntity<Void> getEntity = new HttpEntity<>(headers);
         ResponseEntity<OrderResponse[]> response = restTemplate.exchange(
