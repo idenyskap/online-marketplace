@@ -32,6 +32,7 @@ public class AuthIntegrationTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("jwt.secret", () -> "test-jwt-secret-for-integration-tests-0123456789");
     }
 
     @Test
