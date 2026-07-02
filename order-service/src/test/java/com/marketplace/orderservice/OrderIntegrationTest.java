@@ -61,6 +61,7 @@ public class OrderIntegrationTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+        registry.add("jwt.secret", () -> "test-jwt-secret-for-integration-tests-0123456789");
     }
 
     @BeforeEach
